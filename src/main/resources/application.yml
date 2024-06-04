@@ -1,0 +1,7 @@
+spring.application.name: credit-service
+
+loans:
+  max-amount: 10000
+  min-amount: 2000
+  max-term: 60
+  min-term: 12
