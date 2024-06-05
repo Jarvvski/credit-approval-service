@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class AcmeLocalCreditModifierProvider : DecisionEngine.CreditReportProvider {
-    val fakeBackingStore : Map<Long, DecisionEngine.CreditSegment> = hashMapOf(
+    val fakeBackingStore: Map<Long, DecisionEngine.CreditSegment> = hashMapOf(
         49002010965L to DecisionEngine.CreditSegment.DEBT,
         49002010976L to DecisionEngine.CreditSegment.ONE,
         49002010987L to DecisionEngine.CreditSegment.TWO,
@@ -16,7 +16,7 @@ class AcmeLocalCreditModifierProvider : DecisionEngine.CreditReportProvider {
     )
 
     private object AcmeConstants {
-        const val ACME_PROVIDER_NAME : String = "Acme Credit Reports ltd."
+        const val ACME_PROVIDER_NAME: String = "Acme Credit Reports ltd."
     }
 
     override fun fetchSegment(personalIdentifier: PersonalIdentifier): DecisionEngine.CreditReport {

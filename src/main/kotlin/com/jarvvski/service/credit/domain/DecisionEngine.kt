@@ -13,10 +13,10 @@ class DecisionEngine(
     private val creditReportProviders: List<CreditReportProvider>
 ) {
     interface CreditReportProvider {
-        fun fetchSegment(personalIdentifier: PersonalIdentifier) : CreditReport
+        fun fetchSegment(personalIdentifier: PersonalIdentifier): CreditReport
     }
 
-    data class CreditReport(val provider : CreditReportSupplier, val segment: CreditSegment)
+    data class CreditReport(val provider: CreditReportSupplier, val segment: CreditSegment)
 
     enum class CreditSegment(val multiplier: Int?) {
         DEBT(null),
@@ -27,10 +27,10 @@ class DecisionEngine(
     }
 
     private object DecisionEngineConstants {
-        val APPROVAL_SCORE : BigInteger = BigInteger.ONE
+        val APPROVAL_SCORE: BigInteger = BigInteger.ONE
     }
 
-    fun performDecision(creditApplication: CreditApplication) : CreditDecision {
+    fun performDecision(creditApplication: CreditApplication): CreditDecision {
         // 1. Get all user data
         val creditReportResults = creditReportProviders
             .map { it -> it.fetchSegment(creditApplication.user.identifier) }
@@ -51,8 +51,9 @@ class DecisionEngine(
 
         // 2. for each credit supplier, calculate if we would approve loan
         val creditScores = foundCreditReports
-            .filter { specialSauce(it.segment, creditApplication.loan)
-                .compareTo(DecisionEngineConstants.APPROVAL_SCORE) != -1
+            .filter {
+                specialSauce(it.segment, creditApplication.loan)
+                    .compareTo(DecisionEngineConstants.APPROVAL_SCORE) != -1
             }
 
         // 3. if none approve, return no
@@ -68,9 +69,9 @@ class DecisionEngine(
         return CreditDecision(Decision.APPROVED, maxLoan, creditScores.map { it.provider })
     }
 
-    class DecisionEngineException(message : String, cause: Throwable? = null) : RuntimeException(message, cause)
+    class DecisionEngineException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
 
-    private fun specialSauce(creditSegment: CreditSegment, loan: Loan) : BigInteger {
+    private fun specialSauce(creditSegment: CreditSegment, loan: Loan): BigInteger {
         // credit score = (credit modifier / loan amount) * loan period
 
         // TODO: Calling #intValueExact on bigDecimal can throw exception
@@ -85,12 +86,12 @@ class DecisionEngine(
                 val step2 = step1.multiply(loanTermInMonths)
                 step2.toBigInteger()
             }
-            ?: let { throw DecisionEngineException("$creditSegment cannot be used to calculate internal credit score")}
+            ?: let { throw DecisionEngineException("$creditSegment cannot be used to calculate internal credit score") }
     }
 
-    fun findMaxAmount(creditSegment: CreditSegment, loan: Loan) : Loan {
+    fun findMaxAmount(creditSegment: CreditSegment, loan: Loan): Loan {
         var start = loan.amount.data
-        var end   = loanTermProperties.maxAmount.toBigDecimal()
+        var end = loanTermProperties.maxAmount.toBigDecimal()
         while (start < end) {
             val middle = start + (end - start + BigDecimal.ONE) / BigDecimal.TWO
             val newLoan = Loan(Money(middle), loan.term)

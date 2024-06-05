@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-@Theme(value = "my-theme", variant= Lumo.DARK)
+@Theme(value = "my-theme", variant = Lumo.DARK)
 class CreditServiceApplication : AppShellConfigurator
 
 fun main(args: Array<String>) {
