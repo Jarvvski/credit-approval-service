@@ -11,7 +11,15 @@ import java.math.BigDecimal
 data class CreditApplication(val user: User, val loan: Loan)
 
 data class Loan(val amount: Money, val term: LoanTerm)
-data class Money(val data: BigDecimal)
+data class Money(val data: BigDecimal) {
+    fun add(addition : Money) : Money {
+        return Money(this.data.add(addition.data))
+    }
+
+    fun min(minus : Money) : Money {
+        return Money(this.data.min(minus.data))
+    }
+}
 data class LoanTerm(val months: Int)
 
 

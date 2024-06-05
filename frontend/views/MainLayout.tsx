@@ -21,7 +21,7 @@ export default function MainLayout() {
           <span className="font-semibold text-l">My App</span>
           <nav>
             <NavLink className={navLinkClasses} to="/">
-              Hello World
+              Credit Application
             </NavLink>
             <NavLink className={navLinkClasses} to="/about">
               About

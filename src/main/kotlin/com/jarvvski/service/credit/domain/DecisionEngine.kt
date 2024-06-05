@@ -1,11 +1,17 @@
 package com.jarvvski.service.credit.domain
 
+import com.jarvvski.service.credit.configuration.LoanTermConfiguration
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.math.MathContext
+import java.math.RoundingMode
 
 @Service
-class DecisionEngine(private val creditReportProviders: List<CreditReportProvider>) {
+class DecisionEngine(
+    private val loanTermProperties: LoanTermConfiguration.LoanTermProperties,
+    private val creditReportProviders: List<CreditReportProvider>
+) {
     interface CreditReportProvider {
         fun fetchSegment(personalIdentifier: PersonalIdentifier) : CreditReport
     }
@@ -54,8 +60,12 @@ class DecisionEngine(private val creditReportProviders: List<CreditReportProvide
             return CreditDecision(Decision.DECLINED_BAD_CREDIT, null, emptyList())
         }
 
-        // 4. return the approval
-        return CreditDecision(Decision.APPROVED, creditApplication.loan, creditScores.map { it.provider })
+        // 4. if we have some approvals, lets see how high we can take it
+        val provider = creditScores.first()
+        val maxLoan = findMaxAmount(provider.segment, creditApplication.loan)
+
+        // 5. return the approval
+        return CreditDecision(Decision.APPROVED, maxLoan, creditScores.map { it.provider })
     }
 
     class DecisionEngineException(message : String, cause: Throwable? = null) : RuntimeException(message, cause)
@@ -66,12 +76,31 @@ class DecisionEngine(private val creditReportProviders: List<CreditReportProvide
         // TODO: Calling #intValueExact on bigDecimal can throw exception
         return creditSegment.multiplier
             ?.let {
-                BigDecimal(it)
-                    .div(loan.amount.data)
-                    .multiply(BigDecimal(loan.term.months))
-                    .toBigInteger()
+                val mathContext = MathContext(10, RoundingMode.HALF_UP)
+                val creditSegmentAmount = it.toBigDecimal()
+                val loanAmount = loan.amount.data
+                val loanTermInMonths = loan.term.months.toBigDecimal()
+
+                val step1 = creditSegmentAmount.divide(loanAmount, mathContext)
+                val step2 = step1.multiply(loanTermInMonths)
+                step2.toBigInteger()
             }
             ?: let { throw DecisionEngineException("$creditSegment cannot be used to calculate internal credit score")}
+    }
+
+    fun findMaxAmount(creditSegment: CreditSegment, loan: Loan) : Loan {
+        var start = loan.amount.data
+        var end   = loanTermProperties.maxAmount.toBigDecimal()
+        while (start < end) {
+            val middle = start + (end - start + BigDecimal.ONE) / BigDecimal.TWO
+            val newLoan = Loan(Money(middle), loan.term)
+            if (specialSauce(creditSegment, newLoan).compareTo(DecisionEngineConstants.APPROVAL_SCORE) != -1) {
+                start = middle
+            } else {
+                end = middle - BigDecimal.ONE
+            }
+        }
+        return Loan(Money(start), loan.term)
     }
 
 }
